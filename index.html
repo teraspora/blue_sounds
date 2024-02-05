@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Blue sounds">
+    <meta name="author" content="John Lynch">
+    <link rel="icon" href="data:,">
+    <title>Sound idea</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+        }
+        main {
+            display: grid;
+            grid-template-columns: 1fr;
+            width: 98vw;
+            height: 98vh;
+            gap: 0.2vw;
+            justify-items: stretch;
+            align-items: stretch;
+            margin: 0.2vw auto;
+        }
+        canvas {
+            border: 1px ridge #7a7265;
+            border-radius: 5px;
+            margin: 0.2vw;
+        }
+    </style>
+</head>
+<body>
+
+<main>
+</main>
+
+<script>
+// Inspired by Radu Mariescu-Istodor
+function init() {
+    // Setup
+    main.innerHTML = '';
+    const {width: main_width, height: main_height} = main.getBoundingClientRect();
+    // Create a canvas and put it inside our <main> element  
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', {willReadFrequently: true});
+    canvas.width = main_width - 10;
+    canvas.height = main_height - 10;
+    main.appendChild(canvas);
+    
+    navigator.mediaDevices.getUserMedia({video: true})
+        .then(raw_data => {
+            const video = document.createElement('video');
+            video.srcObject = raw_data;
+            video.play();
+            video.onloadeddata = _ => play(ctx, video);
+        })
+        .catch(err => alert(err));
+}
+
+function oscillate() {
+    const audio_ctx = new AudioContext();
+    const osc = audio_ctx.createOscillator();
+    osc.connect(audio_ctx.destination);
+    osc.frequency.value = 110;
+    return osc;
+}
+
+function get_pixels_with_colour(image_data, colour) {
+    function distance_sqd(col_a, col_b) {
+        return (
+            (col_a.r - col_b.r) * (col_a.r - col_b.r) +
+            (col_a.g - col_b.g) * (col_a.g - col_b.g) +
+            (col_a.b - col_b.b) * (col_a.b - col_b.b)
+        );
+    }
+    const pixels = [];
+    for (let i = 0; i < image_data.data.length; i+= 4) {
+        const x = i / 4 % image_data.width;
+        const y = Math.floor(i / 4 / image_data.width);
+        const r = image_data.data[i];
+        const g = image_data.data[i + 1];
+        const b = image_data.data[i + 2];
+        if (distance_sqd({r, g, b}, {r: 0, g: 0, b:255}) < 25000) {
+            pixels.push([x, y]);
+        }
+    }
+    return pixels;
+}
+
+function play(ctx, video) {
+    ctx.canvas.width = video.videoWidth;
+    ctx.canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, ctx.canvas.width, ctx.canvas.height);
+    const all_pixels = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+    const active_pixels = get_pixels_with_colour(all_pixels, {r: 30, g: 30, b: 90});
+    const pixel_count = active_pixels.length;
+    console.log(pixel_count, 'active_pixels');
+    ctx.save();
+        ctx.fillStyle = '#111';
+        ctx.font = 'italic 16px monospace';
+        const freq = Math.min(pixel_count / 4, 20000);
+        ctx.fillText(`${freq}Hz`, 10, ctx.canvas.height - 20);
+        ctx.strokeRect(10, 10, 12, ctx.canvas.height - 60);
+    ctx.restore();
+    ctx.fillStyle = '#00f';
+    const full_height = (ctx.canvas.height - 62);
+    const start = (1 - freq / 5000) * full_height;
+    ctx.fillRect(11, 11 + start, 10, full_height - start);
+    osc.frequency.value =  freq;
+    
+    requestAnimationFrame(_ => play(ctx, video));
+
+}
+
+// Top level code
+const main = document.querySelector('main');
+let osc = oscillate();
+['load', 'resize'].forEach(event => window.addEventListener(event, init));
+document.addEventListener('click', event => {
+    osc.start();
+});
+
+</script>
+
+</body>
+</html>
