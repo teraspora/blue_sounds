@@ -97,7 +97,6 @@ function play(ctx, video) {
     const all_pixels = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const active_pixels = get_pixels_with_colour(all_pixels, {r: 30, g: 30, b: 90});
     const pixel_count = active_pixels.length;
-    console.log(pixel_count, 'active_pixels');
     ctx.save();
         ctx.fillStyle = '#111';
         ctx.font = 'italic 16px monospace';
@@ -110,9 +109,7 @@ function play(ctx, video) {
     const start = (1 - freq / 5000) * full_height;
     ctx.fillRect(11, 11 + start, 10, full_height - start);
     osc.frequency.value =  freq;
-    
     requestAnimationFrame(_ => play(ctx, video));
-
 }
 
 // Top level code
