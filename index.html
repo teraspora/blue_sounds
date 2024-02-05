@@ -117,7 +117,9 @@ const main = document.querySelector('main');
 let osc = oscillate();
 ['load', 'resize'].forEach(event => window.addEventListener(event, init));
 document.addEventListener('click', event => {
-    osc.start();
+    if (osc.context.state != 'running') {
+        osc.start();
+    }
 });
 
 </script>
