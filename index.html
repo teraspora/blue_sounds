@@ -104,7 +104,7 @@ function play(ctx, video) {
         ctx.fillText(`${freq}Hz`, 10, ctx.canvas.height - 20);
         ctx.strokeRect(10, 10, 12, ctx.canvas.height - 60);
     ctx.restore();
-    ctx.fillStyle = '#00f';
+    ctx.fillStyle = freq > 3000 ? '#f02' : '#00f';
     const full_height = (ctx.canvas.height - 62);
     const start = (1 - freq / 5000) * full_height;
     ctx.fillRect(11, 11 + start, 10, full_height - start);
